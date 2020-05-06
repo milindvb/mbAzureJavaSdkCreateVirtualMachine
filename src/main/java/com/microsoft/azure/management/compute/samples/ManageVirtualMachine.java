@@ -194,11 +194,11 @@ public final class ManageVirtualMachine {
 
             //=============================================================
             // Delete the virtual machine
-            System.out.println("Deleting VM: " + windowsVM.id());
+            //System.out.println("Deleting VM: " + windowsVM.id());
 
-            azure.virtualMachines().deleteById(windowsVM.id());
+            //azure.virtualMachines().deleteById(windowsVM.id());
 
-            System.out.println("Deleted VM: " + windowsVM.id());
+            //System.out.println("Deleted VM: " + windowsVM.id());
             return true;
         } catch (Exception f) {
 
