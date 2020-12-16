@@ -46,159 +46,39 @@ public final class ManageVirtualMachine {
      * @return true if sample runs successfully
      */
     public static boolean runSample(Azure azure) {
-        final Region region = Region.US_WEST_CENTRAL;
-        final String windowsVMName = Utils.createRandomName("mbwindowsVM");
-        final String linuxVMName = Utils.createRandomName("mblinuxVM");
-        final String rgName = Utils.createRandomName("mbVMResGrp");
-        final String userName = "azureadmin";
+        final Region region = Region.US_WEST2;
+        final String windowsVMName = Utils.createRandomName("mbwindowsVMa");
+        final String linuxVMName = Utils.createRandomName("mblinuxVMa");
+        final String rgName = Utils.createRandomName("mbVMResGrp1");
+        final String userName = "mibelhe";
         // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
-        final String password = "12NewPA$$w0rd!";
+        final String password = "abc123456789###";
 
         try {
 
             //=============================================================
-            // Create a Windows virtual machine
-
-            // Prepare a creatable data disk for VM
-            //
-            Creatable<Disk> dataDiskCreatable = azure.disks().define(Utils.createRandomName("dsk-"))
-                    .withRegion(region)
-                    .withExistingResourceGroup(rgName)
-                    .withData()
-                    .withSizeInGB(100);
-
-            // Create a data disk to attach to VM
-            //
-            Disk dataDisk = azure.disks()
-                    .define(Utils.createRandomName("dsk-"))
-                        .withRegion(region)
-                        .withNewResourceGroup(rgName)
-                        .withData()
-                        .withSizeInGB(50)
-                        .create();
-
-            System.out.println("Creating a Windows VM");
-
-            Date t1 = new Date();
-
-            VirtualMachine windowsVM = azure.virtualMachines()
-                    .define(windowsVMName)
-                        .withRegion(region)
-                        .withNewResourceGroup(rgName)
-                        .withNewPrimaryNetwork("10.0.0.0/28")
-                        .withPrimaryPrivateIPAddressDynamic()
-                        .withoutPrimaryPublicIPAddress()
-                        .withPopularWindowsImage(KnownWindowsVirtualMachineImage.WINDOWS_SERVER_2012_R2_DATACENTER)
-                        .withAdminUsername(userName)
-                        .withAdminPassword(password)
-                        .withNewDataDisk(10)
-                        .withNewDataDisk(dataDiskCreatable)
-                        .withExistingDataDisk(dataDisk)
-                        .withSize(VirtualMachineSizeTypes.STANDARD_D3_V2)
-                        .create();
-
-            Date t2 = new Date();
-            System.out.println("Created VM: (took " + ((t2.getTime() - t1.getTime()) / 1000) + " seconds) " + windowsVM.id());
-            // Print virtual machine details
-            Utils.print(windowsVM);
-
-
-            //=============================================================
-            // Update - Tag the virtual machine
-
-            windowsVM.update()
-                    .withTag("who-rocks", "java")
-                    .withTag("where", "on azure")
-                    .apply();
-
-            System.out.println("Tagged VM: " + windowsVM.id());
-
-
-            //=============================================================
-            // Update - Add data disk
-
-                windowsVM.update()
-                        .withNewDataDisk(10)
-                        .apply();
-
-
-            System.out.println("Added a data disk to VM" + windowsVM.id());
-            Utils.print(windowsVM);
-
-
-            //=============================================================
-            // Update - detach data disk
-
-                windowsVM.update()
-                        .withoutDataDisk(0)
-                        .apply();
-
-            System.out.println("Detached data disk at lun 0 from VM " + windowsVM.id());
-
-
-            //=============================================================
-            // Restart the virtual machine
-
-            System.out.println("Restarting VM: " + windowsVM.id());
-
-            windowsVM.restart();
-
-            System.out.println("Restarted VM: " + windowsVM.id() + "; state = " + windowsVM.powerState());
-
-
-            //=============================================================
-            // Stop (powerOff) the virtual machine
-
-            System.out.println("Powering OFF VM: " + windowsVM.id());
-
-            windowsVM.powerOff();
-
-            System.out.println("Powered OFF VM: " + windowsVM.id() + "; state = " + windowsVM.powerState());
-
-            // Get the network where Windows VM is hosted
-            Network network = windowsVM.getPrimaryNetworkInterface().primaryIPConfiguration().getNetwork();
-
-
-            //=============================================================
             // Create a Linux VM in the same virtual network
 
-            /*System.out.println("Creating a Linux VM in the network");
+            System.out.println("Creating a Linux VM in the network");
+            // CHANGE sub below *****************************************************
+            String imageid="/subscriptions/<sub>/resourceGroups/ibLinuxGalleryRG/providers/Microsoft.Compute/galleries/myIbGallery/images/myIbImageDef/versions/0.24537.19969";
 
             VirtualMachine linuxVM = azure.virtualMachines()
                     .define(linuxVMName)
                         .withRegion(region)
-                        .withExistingResourceGroup(rgName)
-                        .withExistingPrimaryNetwork(network)
-                        .withSubnet("subnet1") // Referencing the default subnet name when no name specified at creation
+                        .withNewResourceGroup(rgName)
+                        .withNewPrimaryNetwork("10.0.0.0/24")
                         .withPrimaryPrivateIPAddressDynamic()
-                        .withoutPrimaryPublicIPAddress()
-                        .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_16_04_LTS)
+                        .withNewPrimaryPublicIPAddress(linuxVMName+"publicIp")
+                        .withLinuxCustomImage(imageid)
                         .withRootUsername(userName)
                         .withRootPassword(password)
-                        .withSize(VirtualMachineSizeTypes.STANDARD_D3_V2)
+                        .withSize(VirtualMachineSizeTypes.STANDARD_B2MS)
                         .create();
 
             System.out.println("Created a Linux VM (in the same virtual network): " + linuxVM.id());
-            Utils.print(linuxVM);*/
+            Utils.print(linuxVM);
 
-            //=============================================================
-            // List virtual machines in the resource group
-
-            String resourceGroupName = windowsVM.resourceGroupName();
-
-            System.out.println("Printing list of VMs =======");
-
-            for (VirtualMachine virtualMachine : azure.virtualMachines().listByResourceGroup(resourceGroupName)) {
-                Utils.print(virtualMachine);
-            }
-
-            //=============================================================
-            // Delete the virtual machine
-            //System.out.println("Deleting VM: " + windowsVM.id());
-
-            //azure.virtualMachines().deleteById(windowsVM.id());
-
-            //System.out.println("Deleted VM: " + windowsVM.id());
             return true;
         } catch (Exception f) {
 
@@ -206,16 +86,7 @@ public final class ManageVirtualMachine {
             f.printStackTrace();
 
         } finally {
-
-            try {
-                System.out.println("Deleting Resource Group: " + rgName);
-                azure.resourceGroups().deleteByName(rgName);
-                System.out.println("Deleted Resource Group: " + rgName);
-            } catch (NullPointerException npe) {
-                System.out.println("Did not create any resources in Azure. No clean up is necessary");
-            } catch (Exception g) {
-                g.printStackTrace();
-            }
+            System.out.println("finally");
         }
        return false;
     }
